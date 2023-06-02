@@ -1,0 +1,172 @@
+[
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "load_dotenv",
+        "importPath": "dotenv",
+        "description": "dotenv",
+        "isExtraImport": true,
+        "detail": "dotenv",
+        "documentation": {}
+    },
+    {
+        "label": "ChatOpenAI",
+        "importPath": "langchain.chat_models",
+        "description": "langchain.chat_models",
+        "isExtraImport": true,
+        "detail": "langchain.chat_models",
+        "documentation": {}
+    },
+    {
+        "label": "LLMChain",
+        "importPath": "langchain",
+        "description": "langchain",
+        "isExtraImport": true,
+        "detail": "langchain",
+        "documentation": {}
+    },
+    {
+        "label": "ChatPromptTemplate",
+        "importPath": "langchain.prompts.chat",
+        "description": "langchain.prompts.chat",
+        "isExtraImport": true,
+        "detail": "langchain.prompts.chat",
+        "documentation": {}
+    },
+    {
+        "label": "SystemMessagePromptTemplate",
+        "importPath": "langchain.prompts.chat",
+        "description": "langchain.prompts.chat",
+        "isExtraImport": true,
+        "detail": "langchain.prompts.chat",
+        "documentation": {}
+    },
+    {
+        "label": "StructuredOutputParser",
+        "importPath": "langchain.output_parsers",
+        "description": "langchain.output_parsers",
+        "isExtraImport": true,
+        "detail": "langchain.output_parsers",
+        "documentation": {}
+    },
+    {
+        "label": "ResponseSchema",
+        "importPath": "langchain.output_parsers",
+        "description": "langchain.output_parsers",
+        "isExtraImport": true,
+        "detail": "langchain.output_parsers",
+        "documentation": {}
+    },
+    {
+        "label": "PromptTemplate",
+        "importPath": "langchain.prompts",
+        "description": "langchain.prompts",
+        "isExtraImport": true,
+        "detail": "langchain.prompts",
+        "documentation": {}
+    },
+    {
+        "label": "ChatPromptTemplate",
+        "importPath": "langchain.prompts",
+        "description": "langchain.prompts",
+        "isExtraImport": true,
+        "detail": "langchain.prompts",
+        "documentation": {}
+    },
+    {
+        "label": "HumanMessagePromptTemplate",
+        "importPath": "langchain.prompts",
+        "description": "langchain.prompts",
+        "isExtraImport": true,
+        "detail": "langchain.prompts",
+        "documentation": {}
+    },
+    {
+        "label": "get_code_file_summary_prompt",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```\n{description_features}\nYour response must be in the following format:",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "process_file",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def process_file(input_folder, output_folder, file_path):\n    try:\n        with open(file_path, \"r\", encoding=\"utf-8\") as file:\n            code = file.read()\n            path = os.path.relpath(file_path, input_folder)\n            filename = os.path.basename(file_path)\n            prompt = get_code_file_summary_prompt()\n            _input = prompt.format_prompt(filename=filename, path=path, code=code, description_features=description_features)\n            output = chat_llm(_input.to_messages())\n            parsed_output = output_parser.parse(output.content)",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "process_directory",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def process_directory(input_folder, output_folder):\n    for root, _, files in os.walk(input_folder):\n        if \"node_modules\" not in root:\n            for file in files:\n                print(\"checking file\", file)\n                if file.endswith(('.js', '.jsx', '.ts', '.tsx', 'package.json', '.css', '.scss', '.py', '.html', '.rs', 'Cargo.toml')):\n                    file_path = os.path.join(root, file)\n                    process_file(input_folder, output_folder, file_path)\ndef generate_system_schematic(input_folder, output_folder=None):\n    print(\"starting process\")",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "generate_system_schematic",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def generate_system_schematic(input_folder, output_folder=None):\n    print(\"starting process\")\n    if output_folder is None:\n        output_folder = os.path.join(input_folder, \"outputs\")\n    os.makedirs(output_folder, exist_ok=True)\n    process_directory(input_folder, output_folder)\nif __name__ == \"__main__\":\n    input_folder = os.getcwd()\n    generate_system_schematic(input_folder)",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "chat_llm",
+        "kind": 5,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "chat_llm = ChatOpenAI(model_name=\"gpt-4\", openai_api_key=os.getenv('OPENAI_API_KEY'), temperature=0)\ndescription_features = \"\"\"\nYour description must cover, in highly precise and accurate detail, the following elements:\n1. All of the imports used. You should exactly copy the imports from the code.\n2. All of the algorithms the code uses, include descriptions of code flows and any decisions that are made.\n3. Clearly identify any function calls that occur within the code, be precise about any parameters (and their order) or callbacks that are used.\n4. Any function definition along with their input parameters, return types, and an explanation of their purpose. You should state the order of parameters for functions and methods.\n5. Precisely list all variables used in the file. Provide the datatypes and uses of each. If any variables are created then describe exactly how.\n6. Explain how the code interacts with external APIs, services, or other systems.\n7. Error handling and edge cases: Describe how the code handles errors and edge cases, including any relevant logging or monitoring strategies.",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "description_features",
+        "kind": 5,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "description_features = \"\"\"\nYour description must cover, in highly precise and accurate detail, the following elements:\n1. All of the imports used. You should exactly copy the imports from the code.\n2. All of the algorithms the code uses, include descriptions of code flows and any decisions that are made.\n3. Clearly identify any function calls that occur within the code, be precise about any parameters (and their order) or callbacks that are used.\n4. Any function definition along with their input parameters, return types, and an explanation of their purpose. You should state the order of parameters for functions and methods.\n5. Precisely list all variables used in the file. Provide the datatypes and uses of each. If any variables are created then describe exactly how.\n6. Explain how the code interacts with external APIs, services, or other systems.\n7. Error handling and edge cases: Describe how the code handles errors and edge cases, including any relevant logging or monitoring strategies.\n8. Any additional hints or guidance to ensure the generated code matches the original code.",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "response_schemas",
+        "kind": 5,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "response_schemas = [\n    ResponseSchema(name=\"observation\", description=\"observation about the task\"),\n    ResponseSchema(name=\"action\", description=\"actions taken to complete the task\"),\n    ResponseSchema(name=\"description\", description=\"description of the code file\"),\n]\noutput_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "output_parser",
+        "kind": 5,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "output_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "format_instructions",
+        "kind": 5,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "format_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```\n{description_features}",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    }
+]
