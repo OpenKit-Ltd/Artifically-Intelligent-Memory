@@ -1,0 +1,28 @@
+## Imports
+There are no imports in this file.
+
+## Algorithms
+There are no algorithms in this file.
+
+## Function Calls
+There are no function calls in this file.
+
+## Function Definitions
+There are no function definitions in this file.
+
+## Variables
+- `corsHeaders`: an object containing CORS headers with the following properties:
+  - `Access-Control-Allow-Origin`: a string with the value `'*'`.
+  - `Access-Control-Allow-Headers`: a string with the value `'authorization, x-client-info, apikey, content-type'`.
+
+## External Interactions
+There are no external interactions in this file.
+
+## Error Handling and Edge Cases
+There are no error handling or edge cases in this file.
+
+## Additional Notes
+None.
+
+## Description
+This file exports an object named `corsHeaders` that contains two properties: `Access-Control-Allow-Origin` and `Access-Control-Allow-Headers`. These properties are used to enable Cross-Origin Resource Sharing (CORS) for Supabase functions. The `Access-Control-Allow-Origin` property is set to `'*'`, which allows any domain to access the function. The `Access-Control-Allow-Headers` property is set to a comma-separated string of allowed headers. This allows the client to send additional headers with the request, such as an API key or content type.

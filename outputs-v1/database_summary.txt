@@ -1,0 +1,34 @@
+1. Imports:
+- RecursiveCharacterTextSplitter from 'langchain/text_splitter'
+
+2. Algorithms:
+- handleSensoryInput: This function takes in a Supabase client, raw text, and source. It creates a RecursiveCharacterTextSplitter object and uses it to split the raw text into chunks. It then inserts the chunks into the Supabase database using the insertSensoryInput and insertInputChunks functions.
+- insertSensoryInput: This function takes in a Supabase client and source. It inserts the source and creation date into the 'sensory_inputs' table in the Supabase database and returns the input ID.
+- insertInputChunks: This function takes in a Supabase client, input ID, and an array of chunks. It maps over the chunks to create an array of objects with the input ID, content, null embedding, and sequence number. It then inserts the array of objects into the 'input_chunks' table in the Supabase database.
+
+3. Function calls:
+- await supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() }): Inserts the source and creation date into the 'sensory_inputs' table in the Supabase database.
+- await supabaseClient.from('input_chunks').insert(inputChunks): Inserts the array of objects into the 'input_chunks' table in the Supabase database.
+
+4. Function definitions:
+- handleSensoryInput(supabaseClient: any, raw_text: string, source: string): This function takes in a Supabase client, raw text, and source. It creates a RecursiveCharacterTextSplitter object and uses it to split the raw text into chunks. It then inserts the chunks into the Supabase database using the insertSensoryInput and insertInputChunks functions.
+- insertSensoryInput(supabaseClient: any, source: string): This function takes in a Supabase client and source. It inserts the source and creation date into the 'sensory_inputs' table in the Supabase database and returns the input ID.
+- insertInputChunks(supabaseClient: any, inputId: number, chunks: string[]): This function takes in a Supabase client, input ID, and an array of chunks. It maps over the chunks to create an array of objects with the input ID, content, null embedding, and sequence number. It then inserts the array of objects into the 'input_chunks' table in the Supabase database.
+
+5. Variables:
+- splitter: A RecursiveCharacterTextSplitter object used to split the raw text into chunks.
+- output: An array of strings that represent the chunks of the raw text.
+- inputChunks: An array of objects with the input ID, content, null embedding, and sequence number.
+
+6. External APIs, services, or other systems:
+- OpenAI API: The code imports the OpenAIEmbeddings class from the 'langchain/embeddings/openai' module, but it is commented out and not used.
+
+7. Error handling and edge cases:
+- If an error occurs during the insertion of sensory input or input chunks, the error is logged to the console and -1 is returned.
+- If the input ID is not -1, the input chunks are inserted into the database.
+
+8. Additional hints or guidance:
+- None.
+
+9. Natural language description:
+This TypeScript file inserts sensory input into a Supabase database. It uses a RecursiveCharacterTextSplitter algorithm to split the input into chunks and inserts them into the database using the insertSensoryInput and insertInputChunks functions. The handleSensoryInput function takes in a Supabase client, raw text, and source. It creates a RecursiveCharacterTextSplitter object and uses it to split the raw text into chunks. It then inserts the chunks into the Supabase database using the insertSensoryInput and insertInputChunks functions. If an error occurs during the insertion of sensory input or input chunks, the error is logged to the console and -1 is returned. If the input ID is not -1, the input chunks are inserted into the database. The code imports the OpenAIEmbeddings class from the 'langchain/embeddings/openai' module, but it is commented out and not used.

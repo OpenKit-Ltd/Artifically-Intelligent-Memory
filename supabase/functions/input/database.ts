@@ -1,14 +1,21 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { Document } from "langchain/document";
 
-const embeddings = new OpenAIEmbeddings({openai_api_key: Deno.env.get('SUPABASE_URL')});
+
+const embeddings = new OpenAIEmbeddings({openai_api_key: Deno.env.get('OPENAI_API_KEY')});
 
 
 
 export const insertSensoryInput = async (supabaseClient: any, source: string) => {
+  console.log("Inserting sensory input")
+  console.log("source", source)
   try {
-    const { data, error } = await supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() });
+
+    const { data, error } = await supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() }).select();
+
     if (error) throw error;
+    console.log("data", data)
     return data[0].input_id;
   } catch (error) {
     console.error(error);
@@ -18,15 +25,22 @@ export const insertSensoryInput = async (supabaseClient: any, source: string) =>
 
 
 
-export const insertInputChunks = async (supabaseClient: any, inputId: number, chunks: string[])  => {
+export const insertInputChunks = async (supabaseClient: any, inputId: number, inputChunkDocuments: Document[])  => {
+  console.log("Inserting input chunks")
+  console.log("inputId", inputId)
+  console.log("chunks", inputChunkDocuments)
   try {
-    const inputChunks = chunks.map((content, index) => ({
-      input_id: inputId,
-      content,
-      embedding: null, // Replace with the actual embedding vector
-      sequence_number: index,
-    }));
-
+    const inputChunks = inputChunkDocuments.map(async (inputChunk, index) => {
+      const {content, metadata} = inputChunk
+      const embedding = await embeddings.embedQuery(content);
+      return {
+        input_id: inputId,
+        content,
+        metadata,
+        embedding,
+        sequence_number: index,
+      }
+    });
     const { error } = await supabaseClient.from('input_chunks').insert(inputChunks);
     if (error) throw error;
   } catch (error) {

@@ -89,11 +89,38 @@
         "documentation": {}
     },
     {
+        "label": "asyncio",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "asyncio",
+        "description": "asyncio",
+        "detail": "asyncio",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "get_code_review_prompt",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def get_code_review_prompt():\n    system_template = \"\"\"You have over 10 years in the software development industry. You have build up reliable heuristics on how software should be developed for optimum company efficiency.\nYou work for a software development company as a code reviewer. You are an expert at reviewing code from a variety of programming languages. You have an intricate and detailed understanding of how software development and coding work especially in large teams on production level enterprise software.\nYou have the ability to simulate the running of functions in a virtual environment powered by language, you will use this ability to perform unit tests on files. You know that the results of these simulations may not be accurate.\nYour goal will be to provide intimate and detailed feedback on a coding file you are presented with, this will help the user improve their coding ability, identify bugs and errors and to maximize the efficiency of company operations.\nYou're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
         "label": "get_code_file_summary_prompt",
         "kind": 2,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "def get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```\n{description_features}\nYour response must be in the following format:",
+        "peekOfCode": "def get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nYou are an expert at software development. You are an expert at Python. You are an expert at Javascript and Typescript. You are an expert at software engineering. \nYou are an expert at converting a code file into structured, technical, code summary which allows the code to be understood at a semantic level.\nYour task with be to generate a structured, technical, code summary of the file you are provided.\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -102,7 +129,7 @@
         "kind": 2,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "def process_file(input_folder, output_folder, file_path):\n    try:\n        with open(file_path, \"r\", encoding=\"utf-8\") as file:\n            code = file.read()\n            path = os.path.relpath(file_path, input_folder)\n            filename = os.path.basename(file_path)\n            prompt = get_code_file_summary_prompt()\n            _input = prompt.format_prompt(filename=filename, path=path, code=code, description_features=description_features)\n            output = chat_llm(_input.to_messages())\n            parsed_output = output_parser.parse(output.content)",
+        "peekOfCode": "def process_file(input_folder, output_folder, file_path, processed_files):\n    try:\n        with open(file_path, \"r\", encoding=\"utf-8\") as file:\n            code = file.read()\n            path = os.path.relpath(file_path, input_folder)\n            filename = os.path.basename(file_path)\n            # Check if the output file already exists\n            output_file_name = f\"{os.path.splitext(filename)[0]}_summary.txt\"\n            output_file_path = os.path.join(output_folder, output_file_name)\n            if os.path.exists(output_file_path):",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -111,7 +138,16 @@
         "kind": 2,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "def process_directory(input_folder, output_folder):\n    for root, _, files in os.walk(input_folder):\n        if \"node_modules\" not in root:\n            for file in files:\n                print(\"checking file\", file)\n                if file.endswith(('.js', '.jsx', '.ts', '.tsx', 'package.json', '.css', '.scss', '.py', '.html', '.rs', 'Cargo.toml')):\n                    file_path = os.path.join(root, file)\n                    process_file(input_folder, output_folder, file_path)\ndef generate_system_schematic(input_folder, output_folder=None):\n    print(\"starting process\")",
+        "peekOfCode": "def process_directory(input_folder, output_folder, processed_files):\n    for root, _, files in os.walk(input_folder):\n        if \"node_modules\" not in root:\n            for file in files:\n                if (file.endswith(('.js', '.jsx', '.ts', '.tsx', 'package.json', '.css', '.scss', '.py', '.html', '.rs', 'Cargo.toml'))\n                    and file != \"code_gpt.py\"):\n                    print(\"checking file\", file)\n                    file_path = os.path.join(root, file)\n                    process_file(input_folder, output_folder, file_path, processed_files)\ndef write_summary_to_combined_file(combined_summary_file, original_file_path, summary_file_path):",
+        "detail": "supabase.code_gpt",
+        "documentation": {}
+    },
+    {
+        "label": "write_summary_to_combined_file",
+        "kind": 2,
+        "importPath": "supabase.code_gpt",
+        "description": "supabase.code_gpt",
+        "peekOfCode": "def write_summary_to_combined_file(combined_summary_file, original_file_path, summary_file_path):\n    original_filename = os.path.splitext(os.path.basename(original_file_path))[0]\n    # Write filename and path\n    combined_summary_file.write(f\"Filename: {original_filename}\\n\")\n    combined_summary_file.write(f\"Path: {original_file_path}\\n\\n\")\n    # Write code\n    with open(original_file_path, \"r\", encoding=\"utf-8\") as original_file:\n        code = original_file.read()\n        combined_summary_file.write(\"Code:\\n```\\n\")\n        combined_summary_file.write(code)",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -120,7 +156,7 @@
         "kind": 2,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "def generate_system_schematic(input_folder, output_folder=None):\n    print(\"starting process\")\n    if output_folder is None:\n        output_folder = os.path.join(input_folder, \"outputs\")\n    os.makedirs(output_folder, exist_ok=True)\n    process_directory(input_folder, output_folder)\nif __name__ == \"__main__\":\n    input_folder = os.getcwd()\n    generate_system_schematic(input_folder)",
+        "peekOfCode": "def generate_system_schematic(input_folder, output_folder=None):\n    print(\"starting process\")\n    if output_folder is None:\n        output_folder = os.path.join(input_folder, \"outputs\")\n    os.makedirs(output_folder, exist_ok=True)\n    # Create a dictionary to store original file paths\n    processed_files = {}\n    process_directory(input_folder, output_folder, processed_files)\n    # Combine all summaries into a single file\n    combined_summary_file_path = os.path.join(output_folder, \"combined_summary.txt\")",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -129,16 +165,7 @@
         "kind": 5,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "chat_llm = ChatOpenAI(model_name=\"gpt-4\", openai_api_key=os.getenv('OPENAI_API_KEY'), temperature=0)\ndescription_features = \"\"\"\nYour description must cover, in highly precise and accurate detail, the following elements:\n1. All of the imports used. You should exactly copy the imports from the code.\n2. All of the algorithms the code uses, include descriptions of code flows and any decisions that are made.\n3. Clearly identify any function calls that occur within the code, be precise about any parameters (and their order) or callbacks that are used.\n4. Any function definition along with their input parameters, return types, and an explanation of their purpose. You should state the order of parameters for functions and methods.\n5. Precisely list all variables used in the file. Provide the datatypes and uses of each. If any variables are created then describe exactly how.\n6. Explain how the code interacts with external APIs, services, or other systems.\n7. Error handling and edge cases: Describe how the code handles errors and edge cases, including any relevant logging or monitoring strategies.",
-        "detail": "supabase.code_gpt",
-        "documentation": {}
-    },
-    {
-        "label": "description_features",
-        "kind": 5,
-        "importPath": "supabase.code_gpt",
-        "description": "supabase.code_gpt",
-        "peekOfCode": "description_features = \"\"\"\nYour description must cover, in highly precise and accurate detail, the following elements:\n1. All of the imports used. You should exactly copy the imports from the code.\n2. All of the algorithms the code uses, include descriptions of code flows and any decisions that are made.\n3. Clearly identify any function calls that occur within the code, be precise about any parameters (and their order) or callbacks that are used.\n4. Any function definition along with their input parameters, return types, and an explanation of their purpose. You should state the order of parameters for functions and methods.\n5. Precisely list all variables used in the file. Provide the datatypes and uses of each. If any variables are created then describe exactly how.\n6. Explain how the code interacts with external APIs, services, or other systems.\n7. Error handling and edge cases: Describe how the code handles errors and edge cases, including any relevant logging or monitoring strategies.\n8. Any additional hints or guidance to ensure the generated code matches the original code.",
+        "peekOfCode": "chat_llm = ChatOpenAI(model_name=\"gpt-3.5-turbo\", openai_api_key=os.getenv('OPENAI_API_KEY'), temperature=0)\nresponse_schemas = [\n    ResponseSchema(name=\"observation\", description=\"observation about the task.\"),\n    ResponseSchema(name=\"action\", description=\"action to be taken to complete the task.\"),\n    ResponseSchema(name=\"code_summary\", description=\"your code summary following the format described above.\"),\n]\noutput_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_review_prompt():\n    system_template = \"\"\"You have over 10 years in the software development industry. You have build up reliable heuristics on how software should be developed for optimum company efficiency.",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -147,7 +174,7 @@
         "kind": 5,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "response_schemas = [\n    ResponseSchema(name=\"observation\", description=\"observation about the task\"),\n    ResponseSchema(name=\"action\", description=\"actions taken to complete the task\"),\n    ResponseSchema(name=\"description\", description=\"description of the code file\"),\n]\noutput_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}",
+        "peekOfCode": "response_schemas = [\n    ResponseSchema(name=\"observation\", description=\"observation about the task.\"),\n    ResponseSchema(name=\"action\", description=\"action to be taken to complete the task.\"),\n    ResponseSchema(name=\"code_summary\", description=\"your code summary following the format described above.\"),\n]\noutput_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_review_prompt():\n    system_template = \"\"\"You have over 10 years in the software development industry. You have build up reliable heuristics on how software should be developed for optimum company efficiency.\nYou work for a software development company as a code reviewer. You are an expert at reviewing code from a variety of programming languages. You have an intricate and detailed understanding of how software development and coding work especially in large teams on production level enterprise software.",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -156,7 +183,7 @@
         "kind": 5,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "output_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```",
+        "peekOfCode": "output_parser = StructuredOutputParser.from_response_schemas(response_schemas)\nformat_instructions = output_parser.get_format_instructions()\ndef get_code_review_prompt():\n    system_template = \"\"\"You have over 10 years in the software development industry. You have build up reliable heuristics on how software should be developed for optimum company efficiency.\nYou work for a software development company as a code reviewer. You are an expert at reviewing code from a variety of programming languages. You have an intricate and detailed understanding of how software development and coding work especially in large teams on production level enterprise software.\nYou have the ability to simulate the running of functions in a virtual environment powered by language, you will use this ability to perform unit tests on files. You know that the results of these simulations may not be accurate.\nYour goal will be to provide intimate and detailed feedback on a coding file you are presented with, this will help the user improve their coding ability, identify bugs and errors and to maximize the efficiency of company operations.\nYou're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}",
         "detail": "supabase.code_gpt",
         "documentation": {}
     },
@@ -165,7 +192,7 @@
         "kind": 5,
         "importPath": "supabase.code_gpt",
         "description": "supabase.code_gpt",
-        "peekOfCode": "format_instructions = output_parser.get_format_instructions()\ndef get_code_file_summary_prompt():\n    system_template = \"\"\"You're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: \n```\n{code}\n```\n{description_features}",
+        "peekOfCode": "format_instructions = output_parser.get_format_instructions()\ndef get_code_review_prompt():\n    system_template = \"\"\"You have over 10 years in the software development industry. You have build up reliable heuristics on how software should be developed for optimum company efficiency.\nYou work for a software development company as a code reviewer. You are an expert at reviewing code from a variety of programming languages. You have an intricate and detailed understanding of how software development and coding work especially in large teams on production level enterprise software.\nYou have the ability to simulate the running of functions in a virtual environment powered by language, you will use this ability to perform unit tests on files. You know that the results of these simulations may not be accurate.\nYour goal will be to provide intimate and detailed feedback on a coding file you are presented with, this will help the user improve their coding ability, identify bugs and errors and to maximize the efficiency of company operations.\nYou're are provided with the following information about a programming file:\nfilename: {filename}\npath: {path}\ncode: ",
         "detail": "supabase.code_gpt",
         "documentation": {}
     }

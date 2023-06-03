@@ -1,0 +1,231 @@
+Filename: index
+Path: ./supabase/functions/input/index.ts
+
+Code:
+```
+import { serve } from "http/server.ts";
+import { createClient } from "supabase";
+import { corsHeaders } from "../cors.ts";
+import { handleSensoryInput } from "./database.ts";
+
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    // setup supabase at the start of the function
+    const supabaseClient = await createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
+    // Now we can get the session or user object
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser()
+
+    console.log("user", user)
+
+    const { input, source } = await req.json();
+    const response = await handleSensoryInput(supabaseClient, input, source)
+
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+    
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+
+// To invoke:
+// curl -i --location --request POST 'http://localhost:54321/functions/v1/' \
+//   --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
+//   --header 'Content-Type: application/json' \
+//   --data '{"name":"Functions"}'
+
+
+```
+
+Explanation:
+1. Imports:
+- `serve` from `http/server.ts`
+- `createClient` from `supabase`
+- `corsHeaders` from `../cors.ts`
+- `handleSensoryInput` from `./database.ts`
+
+2. The code starts a server using `serve` and listens for incoming requests. If the request method is `OPTIONS`, it returns a response with CORS headers. Otherwise, it sets up a Supabase client using `createClient` and gets the user object using `getUser`. It then parses the request body for `input` and `source` and passes them to `handleSensoryInput`. The response is returned with CORS headers and a JSON content type.
+
+3. Function calls:
+- `serve`: takes a callback function as its argument.
+- `createClient`: takes three arguments in the following order: Supabase URL, Supabase anonymous key, and an object with global headers.
+- `getUser`: takes no arguments.
+- `req.json()`: takes no arguments.
+- `handleSensoryInput`: takes three arguments in the following order: Supabase client, input, and source.
+
+4. Function definitions:
+- `handleSensoryInput`: takes three arguments in the following order: Supabase client, input, and source. Returns a Promise that resolves to an object with `success` and `message` properties. This function inserts the `input` and `source` into a Supabase table and returns a success message.
+
+5. Variables:
+- `supabaseClient`: a Supabase client object.
+- `user`: an object containing user information.
+- `input`: a string containing sensory input.
+- `source`: a string containing the source of the sensory input.
+- `response`: an object containing a success message or an error message.
+
+6. The code interacts with the Supabase API to insert data into a table.
+
+7. The code handles errors by returning a response with a 500 status code and an error message. It also logs the error to the console.
+
+8. No additional hints or guidance.
+
+9. This file is a Deno serverless function that handles sensory input and inserts it into a Supabase database. It starts a server using `serve` and listens for incoming requests. If the request method is `OPTIONS`, it returns a response with CORS headers. Otherwise, it sets up a Supabase client using `createClient` and gets the user object using `getUser`. It then parses the request body for `input` and `source` and passes them to `handleSensoryInput`. The response is returned with CORS headers and a JSON content type. The code interacts with the Supabase API to insert data into a table. It handles errors by returning a response with a 500 status code and an error message. It also logs the error to the console. To reconstruct the file, start by importing the necessary modules and defining the `handleSensoryInput` function. Then, set up a server using `serve` and listen for incoming requests. If the request method is `OPTIONS`, return a response with CORS headers. Otherwise, set up a Supabase client using `createClient` and get the user object using `getUser`. Parse the request body for `input` and `source` and pass them to `handleSensoryInput`. Return the response with CORS headers and a JSON content type. Handle errors by returning a response with a 500 status code and an error message, and logging the error to the console.
+
+--------------------------------------------------------------------------------
+
+Filename: database
+Path: ./supabase/functions/input/database.ts
+
+Code:
+```
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+
+const embeddings = new OpenAIEmbeddings({openai_api_key: Deno.env.get('OPENAI_API_KEY')});
+
+
+
+export const insertSensoryInput = async (supabaseClient: any, source: string) => {
+  try {
+    const { data, error } = await supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() });
+    if (error) throw error;
+    return data[0].input_id;
+  } catch (error) {
+    console.error(error);
+    return -1;
+  }
+}
+
+
+
+export const insertInputChunks = async (supabaseClient: any, inputId: number, chunks: string[])  => {
+  try {
+    const inputChunks = chunks.map((content, index) => ({
+      input_id: inputId,
+      content,
+      embedding: null, // Replace with the actual embedding vector
+      sequence_number: index,
+    }));
+
+    const { error } = await supabaseClient.from('input_chunks').insert(inputChunks);
+    if (error) throw error;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+
+export const handleSensoryInput = async (supabaseClient: any, raw_text: string, source: string) => {
+    const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 1000,
+        chunkOverlap: 250,
+    });
+
+    const output = await splitter.createDocuments([raw_text]);
+    const inputId = await insertSensoryInput(supabaseClient, source);
+    if (inputId !== -1) {
+        await insertInputChunks(supabaseClient, inputId, output);
+    }
+}
+```
+
+Explanation:
+## Imports
+- `RecursiveCharacterTextSplitter` is imported from `langchain/text_splitter`
+
+## Algorithms
+- `insertSensoryInput` inserts a sensory input into the database by calling `supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() })`. If an error occurs, it is thrown. The function returns the input ID of the inserted data.
+- `insertInputChunks` inserts input chunks into the database by mapping over the `chunks` array and creating an object for each chunk with the input ID, content, embedding, and sequence number. The objects are then inserted into the `input_chunks` table using `supabaseClient.from('input_chunks').insert(inputChunks)`. If an error occurs, it is thrown.
+- `handleSensoryInput` handles a sensory input by creating a `RecursiveCharacterTextSplitter` object with a chunk size of 1000 and a chunk overlap of 250. The `createDocuments` method is called on the splitter object with the `raw_text` parameter, and the resulting output is stored in the `output` variable. The `insertSensoryInput` function is called with the `supabaseClient` and `source` parameters, and the resulting input ID is stored in the `inputId` variable. If the input ID is not -1, the `insertInputChunks` function is called with the `supabaseClient`, `inputId`, and `output` parameters.
+
+## Function Calls
+- `supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() })` is called in the `insertSensoryInput` function.
+- `supabaseClient.from('input_chunks').insert(inputChunks)` is called in the `insertInputChunks` function.
+
+## Function Definitions
+- `insertSensoryInput(supabaseClient: any, source: string) => Promise<number>` inserts a sensory input into the database and returns the input ID of the inserted data. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `source` parameter is of type `string` and represents the source of the input data.
+- `insertInputChunks(supabaseClient: any, inputId: number, chunks: string[]) => Promise<void>` inserts input chunks into the database. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `inputId` parameter is of type `number` and represents the input ID of the data to which the chunks belong. The `chunks` parameter is of type `string[]` and represents the array of input chunks.
+- `handleSensoryInput(supabaseClient: any, raw_text: string, source: string) => Promise<void>` handles a sensory input by splitting it into chunks and inserting them into the database. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `raw_text` parameter is of type `string` and represents the raw input text. The `source` parameter is of type `string` and represents the source of the input data.
+
+## Variables
+- `splitter` is a `RecursiveCharacterTextSplitter` object created with a chunk size of 1000 and a chunk overlap of 250.
+- `output` is an array of strings representing the output of the `createDocuments` method called on the `splitter` object.
+- `inputId` is a number representing the input ID of the inserted data.
+- `inputChunks` is an array of objects representing the input chunks to be inserted into the database. Each object has the following properties:
+  - `input_id`: the input ID of the data to which the chunk belongs
+  - `content`: the content of the chunk
+  - `embedding`: the embedding vector of the chunk (null in this case)
+  - `sequence_number`: the sequence number of the chunk in the input data
+
+## External Interactions
+- The code interacts with a Supabase database through the `supabaseClient` object passed as a parameter to each function.
+
+## Error Handling and Edge Cases
+- If an error occurs during the insertion of data into the database, it is thrown and logged to the console.
+- If the input ID returned by `insertSensoryInput` is -1, the `insertInputChunks` function is not called.
+
+## Additional Notes
+- The `OpenAIEmbeddings` import and `embeddings` constant are commented out and not used in the code.
+- The `handleSensoryInput` function assumes that the `createDocuments` method of the `splitter` object returns an array of strings, but this is not explicitly stated in the code.
+- The `insertInputChunks` function assumes that the `chunks` array is not empty, but this is not explicitly checked in the code.
+
+--------------------------------------------------------------------------------
+
+Filename: cors
+Path: ./supabase/functions/cors.ts
+
+Code:
+```
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+```
+
+Explanation:
+## Imports
+There are no imports in this file.
+
+## Algorithms
+There are no algorithms in this file.
+
+## Function Calls
+There are no function calls in this file.
+
+## Function Definitions
+There are no function definitions in this file.
+
+## Variables
+- `corsHeaders`: an object containing CORS headers with the following properties:
+  - `Access-Control-Allow-Origin`: a string with the value `'*'`.
+  - `Access-Control-Allow-Headers`: a string with the value `'authorization, x-client-info, apikey, content-type'`.
+
+## External Interactions
+There are no external interactions in this file.
+
+## Error Handling and Edge Cases
+There are no error handling or edge cases in this file.
+
+## Additional Notes
+None.
+
+## Description
+This file exports an object named `corsHeaders` that contains two properties: `Access-Control-Allow-Origin` and `Access-Control-Allow-Headers`. These properties are used to enable Cross-Origin Resource Sharing (CORS) for Supabase functions. The `Access-Control-Allow-Origin` property is set to `'*'`, which allows any domain to access the function. The `Access-Control-Allow-Headers` property is set to a comma-separated string of allowed headers. This allows the client to send additional headers with the request, such as an API key or content type.
+
+--------------------------------------------------------------------------------
+

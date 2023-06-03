@@ -1,0 +1,38 @@
+## Imports
+- `RecursiveCharacterTextSplitter` is imported from `langchain/text_splitter`
+
+## Algorithms
+- `insertSensoryInput` inserts a sensory input into the database by calling `supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() })`. If an error occurs, it is thrown. The function returns the input ID of the inserted data.
+- `insertInputChunks` inserts input chunks into the database by mapping over the `chunks` array and creating an object for each chunk with the input ID, content, embedding, and sequence number. The objects are then inserted into the `input_chunks` table using `supabaseClient.from('input_chunks').insert(inputChunks)`. If an error occurs, it is thrown.
+- `handleSensoryInput` handles a sensory input by creating a `RecursiveCharacterTextSplitter` object with a chunk size of 1000 and a chunk overlap of 250. The `createDocuments` method is called on the splitter object with the `raw_text` parameter, and the resulting output is stored in the `output` variable. The `insertSensoryInput` function is called with the `supabaseClient` and `source` parameters, and the resulting input ID is stored in the `inputId` variable. If the input ID is not -1, the `insertInputChunks` function is called with the `supabaseClient`, `inputId`, and `output` parameters.
+
+## Function Calls
+- `supabaseClient.from('sensory_inputs').insert({ source, creation_date: new Date() })` is called in the `insertSensoryInput` function.
+- `supabaseClient.from('input_chunks').insert(inputChunks)` is called in the `insertInputChunks` function.
+
+## Function Definitions
+- `insertSensoryInput(supabaseClient: any, source: string) => Promise<number>` inserts a sensory input into the database and returns the input ID of the inserted data. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `source` parameter is of type `string` and represents the source of the input data.
+- `insertInputChunks(supabaseClient: any, inputId: number, chunks: string[]) => Promise<void>` inserts input chunks into the database. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `inputId` parameter is of type `number` and represents the input ID of the data to which the chunks belong. The `chunks` parameter is of type `string[]` and represents the array of input chunks.
+- `handleSensoryInput(supabaseClient: any, raw_text: string, source: string) => Promise<void>` handles a sensory input by splitting it into chunks and inserting them into the database. The `supabaseClient` parameter is of type `any` and represents the Supabase client object. The `raw_text` parameter is of type `string` and represents the raw input text. The `source` parameter is of type `string` and represents the source of the input data.
+
+## Variables
+- `splitter` is a `RecursiveCharacterTextSplitter` object created with a chunk size of 1000 and a chunk overlap of 250.
+- `output` is an array of strings representing the output of the `createDocuments` method called on the `splitter` object.
+- `inputId` is a number representing the input ID of the inserted data.
+- `inputChunks` is an array of objects representing the input chunks to be inserted into the database. Each object has the following properties:
+  - `input_id`: the input ID of the data to which the chunk belongs
+  - `content`: the content of the chunk
+  - `embedding`: the embedding vector of the chunk (null in this case)
+  - `sequence_number`: the sequence number of the chunk in the input data
+
+## External Interactions
+- The code interacts with a Supabase database through the `supabaseClient` object passed as a parameter to each function.
+
+## Error Handling and Edge Cases
+- If an error occurs during the insertion of data into the database, it is thrown and logged to the console.
+- If the input ID returned by `insertSensoryInput` is -1, the `insertInputChunks` function is not called.
+
+## Additional Notes
+- The `OpenAIEmbeddings` import and `embeddings` constant are commented out and not used in the code.
+- The `handleSensoryInput` function assumes that the `createDocuments` method of the `splitter` object returns an array of strings, but this is not explicitly stated in the code.
+- The `insertInputChunks` function assumes that the `chunks` array is not empty, but this is not explicitly checked in the code.
